@@ -348,48 +348,108 @@ if st.button("🖼️ இறுதி வரைபடத்தை உருவ�
             lambda status: CATEGORIES[status]["color"]
         )
 
-        fig, ax = plt.subplots(figsize=(10, 12), dpi=200, facecolor="white")
-        ax.set_facecolor("white")
+        # A4 portrait layout with a dedicated right-hand legend panel.
+        # This keeps the legend completely outside the Tamil Nadu polygon.
+        fig = plt.figure(figsize=(8.27, 11.69), dpi=300, facecolor="#FFFFFF")
+        ax = fig.add_axes([0.035, 0.075, 0.68, 0.82])
+        legend_ax = fig.add_axes([0.735, 0.22, 0.235, 0.48])
+        legend_ax.set_axis_off()
+        ax.set_facecolor("#FFFFFF")
+
         plot_df.plot(
-            ax=ax, color=plot_df["Colour"], edgecolor="#333333", linewidth=0.6
+            ax=ax,
+            color=plot_df["Colour"],
+            edgecolor="#343A40",
+            linewidth=0.75,
+            antialiased=True,
         )
+
+        # Use representative points so labels remain inside multipart districts.
+        # Add a subtle white halo to improve readability over all fill colours.
+        import matplotlib.patheffects as path_effects
 
         for _, row in plot_df.iterrows():
             point = row.geometry.representative_point()
-            ax.text(
-                point.x, point.y, row["__district_name"],
-                ha="center", va="center", fontsize=5.5,
-                fontweight="bold", color="black", fontproperties=TAMIL_FONT,
+            label = ax.text(
+                point.x,
+                point.y,
+                row["__district_name"],
+                ha="center",
+                va="center",
+                fontsize=7.2,
+                fontweight="bold",
+                color="#161616",
+                fontproperties=TAMIL_FONT,
+                zorder=5,
+                clip_on=True,
             )
+            label.set_path_effects([
+                path_effects.Stroke(linewidth=1.5, foreground="white"),
+                path_effects.Normal(),
+            ])
 
         legend_items = [
             mpatches.Patch(
                 facecolor=CATEGORIES[category]["color"],
-                edgecolor="#333333",
+                edgecolor="#343A40",
+                linewidth=0.8,
                 label=CATEGORIES[category]["ta"],
             )
             for category in status_options
         ]
-        ax.legend(
+        legend_ax.legend(
             handles=legend_items,
             title="மழை நிலை",
-            loc="lower left",
-            fontsize=9,
-            title_fontsize=10,
+            loc="upper left",
+            fontsize=10,
+            title_fontsize=11,
             prop=TAMIL_FONT,
             frameon=True,
+            fancybox=False,
+            framealpha=1,
+            facecolor="#FFFFFF",
+            edgecolor="#B8C0C8",
+            borderpad=1.2,
+            labelspacing=1.25,
+            handlelength=1.8,
+            handleheight=1.1,
         )
-        ax.set_title(
-            image_title, fontsize=15, fontweight="bold", pad=18,
+        legend_ax.text(
+            0.02, 0.02,
+            "தமிழ்நாடு மாவட்டங்கள்",
+            transform=legend_ax.transAxes,
+            ha="left", va="bottom",
+            fontsize=8, color="#59636E",
             fontproperties=TAMIL_FONT,
         )
+
+        fig.suptitle(
+            image_title,
+            x=0.49,
+            y=0.965,
+            fontsize=17,
+            fontweight="bold",
+            fontproperties=TAMIL_FONT,
+            color="#17212B",
+        )
+        fig.text(
+            0.49, 0.935,
+            "மாவட்ட வாரியான மழை நிலை",
+            ha="center", va="center",
+            fontsize=10,
+            fontproperties=TAMIL_FONT,
+            color="#59636E",
+        )
         ax.set_axis_off()
-        fig.tight_layout()
+        ax.set_aspect("equal")
 
         image_buffer = BytesIO()
         fig.savefig(
-            image_buffer, format="png", dpi=300,
-            bbox_inches="tight", facecolor="white",
+            image_buffer,
+            format="png",
+            dpi=300,
+            facecolor="#FFFFFF",
+            pil_kwargs={"optimize": True},
         )
         plt.close(fig)
         image_bytes = image_buffer.getvalue()
